@@ -1,5 +1,6 @@
 import sys
 import io
+import fitz
 import csv
 from datetime import datetime
 
@@ -174,17 +175,26 @@ class WaterMarker(QMainWindow):
         f = io.StringIO(template)
         uic.loadUi(f, self)
 
+        self.waterButton.setDisabled(True)
+        self.completeButton.setDisabled(True)
         self.pixmap = QPixmap("menu_img.jpg")
         self.img_label_2 = QLabel(self.tab_7)
         self.img_label_2.move(60, 120)
         self.img_label_2.resize(596, 155)
         self.img_label_2.setPixmap(self.pixmap)
 
+        self.itog_label = QLabel(self.tab_8)
+        self.itog_label.move(0, 0)
+        self.itog_label.resize(700, 700)
+
         # установил картинку
         self.completeButton.clicked.connect(self.menu_calculation)
 
         self.filebox.stateChanged.connect(self.file)
         self.img_box.stateChanged.connect(self.image)
+
+        self.filebox.clicked.connect(self.check)
+        self.img_box.clicked.connect(self.check)
 
         # настроил кнопки выбора файла
 
@@ -194,6 +204,7 @@ class WaterMarker(QMainWindow):
         if state == 2:
             self.img_box.setDisabled(True)
             self.waterButton.setDisabled(True)
+
         else:
             self.img_box.setDisabled(False)
             self.waterButton.setDisabled(False)
@@ -205,6 +216,12 @@ class WaterMarker(QMainWindow):
 
         else:
             self.filebox.setDisabled(False)
+
+    def check(self):
+        if (any([self.filebox.isChecked(), self.img_box.isChecked()])):
+            self.completeButton.setDisabled(False)
+        else:
+            self.completeButton.setDisabled(True)
 
     # отключил кнопку файла при выборе кнокпи изображения
 
@@ -330,6 +347,20 @@ class WaterMarker(QMainWindow):
             self.img_f = 'final.docx'
             convert(self.img_f)
             # перевел получившийся файл в формат pdf
+            self.pdf_to_image('final.pdf')
+
+            self.pix = QPixmap("itog.png")
+            self.itog_label.setPixmap(self.pix)
+            # с помощью созданной функции перевел pdf файл в изображение
+
+    def pdf_to_image(self, pdf_name):
+        pdf_document = fitz.open(pdf_name)
+        page = pdf_document.load_page(0)
+        image = page.get_pixmap()
+        image.save("itog.png")
+        pdf_document.close()
+
+    # функция по конвертированию pdf файлов в изображения
 
     def show_error_message(self, title, message):
         error_dialog = QMessageBox(self)
