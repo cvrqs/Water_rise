@@ -223,6 +223,11 @@ class WaterMarker(QMainWindow):
         else:
             self.completeButton.setDisabled(True)
 
+        if self.img_box.isChecked():
+            self.waterButton.setDisabled(False)
+        else:
+            self.waterButton.setDisabled(True)
+
     # отключил кнопку файла при выборе кнокпи изображения
 
     def choose_object(self):
