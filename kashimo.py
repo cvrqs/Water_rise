@@ -256,7 +256,7 @@ class WaterMarker(QMainWindow):
                 data = list(csv.reader(menu, delimiter=';', quotechar='"'))
                 self.date = data[0][-1]
 
-                data = list(filter(lambda x: len(set(x)) > 5, data))
+                data = list(filter(lambda x: len(set(x)) > 6, data))
 
                 self.name_dinner = data[1][0]
                 self.snack = data[1][1:]
