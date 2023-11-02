@@ -4,6 +4,7 @@ import fitz
 import csv
 from datetime import datetime
 
+from main import menu_calculation
 from PyQt5 import uic  # Импортируем uic
 from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QFileDialog, QMessageBox
 from PyQt5.QtGui import QPixmap
@@ -287,7 +288,7 @@ class WaterMarker(QMainWindow):
                 date = datetime.strptime(self.date, "%d.%m.%Y")
                 date = date.strftime("%d %B %Y")
 
-                doc = DocxTemplate("wordprime.docx")
+                doc = DocxTemplate("wordprime1.docx")
                 context = {
                     'date': str(date),
                     'snack': self.snack[0],
@@ -357,6 +358,8 @@ class WaterMarker(QMainWindow):
             self.pix = QPixmap("itog.png")
             self.itog_label.setPixmap(self.pix)
             # с помощью созданной функции перевел pdf файл в изображение
+        elif self.iname:
+            print(self.iname)
 
     def pdf_to_image(self, pdf_name):
         pdf_document = fitz.open(pdf_name)
