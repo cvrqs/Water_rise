@@ -3,10 +3,10 @@ import io
 import fitz
 import csv
 from datetime import datetime
+from main import Wplace
 
-from main import menu_calculation
 from PyQt5 import uic  # Импортируем uic
-from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QFileDialog, QMessageBox
+from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QFileDialog, QMessageBox, QPushButton, QWidget
 from PyQt5.QtGui import QPixmap
 from docxtpl import DocxTemplate
 from docx2pdf import convert
@@ -188,6 +188,10 @@ class WaterMarker(QMainWindow):
         self.itog_label.move(0, 0)
         self.itog_label.resize(700, 700)
 
+        self.fname = None
+        self.iname = None
+        self.wname = None
+
         # установил картинку
         self.completeButton.clicked.connect(self.menu_calculation)
 
@@ -196,7 +200,7 @@ class WaterMarker(QMainWindow):
 
         self.filebox.clicked.connect(self.check)
         self.img_box.clicked.connect(self.check)
-
+        self.waterButton.clicked.connect(self.watermarkb)
         # настроил кнопки выбора файла
 
         self.filebutton.clicked.connect(self.choose_object)
@@ -219,9 +223,7 @@ class WaterMarker(QMainWindow):
             self.filebox.setDisabled(False)
 
     def check(self):
-        if (any([self.filebox.isChecked(), self.img_box.isChecked()])):
-            self.completeButton.setDisabled(False)
-        else:
+        if not (any([self.filebox.isChecked(), self.img_box.isChecked()])):
             self.completeButton.setDisabled(True)
 
         if self.img_box.isChecked():
@@ -229,18 +231,25 @@ class WaterMarker(QMainWindow):
         else:
             self.waterButton.setDisabled(True)
 
-    # отключил кнопку файла при выборе кнокпи изображения
+        if self.img_box.isChecked() and self.wname and self.iname:
+            self.completeButton.setDisabled(False)
+
+        if self.fname and self.filebox:
+            self.completeButton.setDisabled(False)
+
+        elif not (self.fname) and self.filebox:
+            self.completeButton.setDisabled(True)
 
     def choose_object(self):
 
         if not self.img_box.isEnabled():
-            self.fname = QFileDialog.getOpenFileName(self, 'Выбрать файл', '')[0]
+            self.fname = QFileDialog.getOpenFileName(self, 'Выбрать файл', '', filter='csv (*.csv)')[0]
             self.fname = self.fname.split('/')[-1]
             self.iname = None
             if not self.fname.endswith('.csv'):
                 self.show_error_message("Ошибка формата файла", "Выбранный файл должен быть формата CSV.")
                 return
-
+            self.check()
         if not self.filebox.isEnabled():
             self.iname = QFileDialog.getOpenFileName(self, 'Выбрать картинку', '')[0]
             self.iname = self.iname.split('/')[-1]
@@ -249,6 +258,20 @@ class WaterMarker(QMainWindow):
                 self.show_error_message("Ошибка формата файла", "Выбранный файл должен быть формата jpg либо png.")
                 return
         # возможность выбирать файл/изображение
+
+    def watermarkb(self):
+        self.wname = QFileDialog.getOpenFileName(self, 'Выбрать водяной знак', '')[0]
+        self.wname = self.wname.split('/')[-1]
+        if not (self.wname.endswith('.jpg') or self.wname.endswith('.png')):
+            self.show_error_message("Ошибка формата файла", "Выбранный файл должен быть формата jpg либо png.")
+            return
+        self.check()
+        self.water_mark_place()
+
+    def water_mark_place(self):
+        if self.wname:
+            self.app1 = Wplace()
+            self.app1.show()
 
     def menu_calculation(self):
         if self.fname:
