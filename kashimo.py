@@ -4,9 +4,10 @@ from PyQt5.QtWidgets import QWidget, QApplication, QPushButton, QMessageBox
 
 
 class Wplace(QWidget):
-    def __init__(self):
+    def __init__(self, window):
         super().__init__()
         self.initUI()
+        self.window = window
 
     def initUI(self):
         self.setGeometry(300, 300, 300, 300)
@@ -30,7 +31,6 @@ class Wplace(QWidget):
         self.rightTopButton.move(200, 0)
         self.rightTopButton.clicked.connect(self.button_clicked)
 
-
         self.leftMiddleButton = QPushButton(self)
         self.leftMiddleButton.setText("lm")
         self.leftMiddleButton.resize(100, 90)
@@ -38,7 +38,7 @@ class Wplace(QWidget):
         self.leftMiddleButton.clicked.connect(self.button_clicked)
 
         self.midMiddleButton = QPushButton(self)
-        self.midMiddleButton.setText("lt")
+        self.midMiddleButton.setText("mm")
         self.midMiddleButton.resize(100, 90)
         self.midMiddleButton.move(100, 100)
         self.midMiddleButton.clicked.connect(self.button_clicked)
@@ -56,7 +56,7 @@ class Wplace(QWidget):
         self.leftDownButton.clicked.connect(self.button_clicked)
 
         self.midDownButton = QPushButton(self)
-        self.midDownButton.setText("rd")
+        self.midDownButton.setText("md")
         self.midDownButton.resize(100, 90)
         self.midDownButton.move(100, 200)
         self.midDownButton.clicked.connect(self.button_clicked)
@@ -69,15 +69,17 @@ class Wplace(QWidget):
 
     def button_clicked(self):
         self.sender = self.sender().text()
+        self.window.corner = self.sender
         self.show_ok_message("Уточнение", 'Чтобы выбрать новое место, выберите водяной знак.')
-        print(self.sender)
         self.close()
+
     def show_ok_message(self, title, message):
         ok_dialog = QMessageBox(self)
         ok_dialog.setIcon(QMessageBox.Information)
         ok_dialog.setWindowTitle(title)
         ok_dialog.setText(message)
         ok_dialog.exec_()
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
