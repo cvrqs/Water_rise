@@ -1,5 +1,7 @@
+import shutil
 import sys
 import io
+import os
 import fitz
 import csv
 from datetime import datetime
@@ -177,6 +179,10 @@ class WaterMarker(QMainWindow):
         f = io.StringIO(template)
         uic.loadUi(f, self)
 
+        self.folder_path = 'D:\project\empt'
+        self.i = 1
+
+        self.corner = ''
         self.waterButton.setDisabled(True)
         self.completeButton.setDisabled(True)
         self.pixmap = QPixmap("menu_img.jpg")
@@ -188,6 +194,8 @@ class WaterMarker(QMainWindow):
         self.itog_label = QLabel(self.tab_8)
         self.itog_label.move(0, 0)
         self.itog_label.resize(700, 700)
+
+        self.completeButton.clicked.connect(self.set_watermark)
 
         self.fname = None
         self.iname = None
@@ -245,35 +253,245 @@ class WaterMarker(QMainWindow):
 
         if not self.img_box.isEnabled():
             self.fname = QFileDialog.getOpenFileName(self, 'Выбрать файл', '', filter='csv (*.csv)')[0]
-            self.fname = self.fname.split('/')[-1]
-            self.iname = None
-            if not self.fname.endswith('.csv'):
-                self.show_error_message("Ошибка формата файла", "Выбранный файл должен быть формата CSV.")
-                return
+            try:
+                destination_path = os.path.join('D:\project', os.path.basename(self.fname))
+                shutil.copy(self.iname, destination_path)
+                self.fname = self.fname.split('/')[-1]
+                self.iname = None
+                if not self.fname.endswith('.csv'):
+                    self.show_error_message("Ошибка формата файла", "Выбранный файл должен быть формата CSV.")
+                    return
+            except Exception as e:
+                print(e)
             self.check()
         if not self.filebox.isEnabled():
             self.iname = QFileDialog.getOpenFileName(self, 'Выбрать картинку', '')[0]
-            self.iname = self.iname.split('/')[-1]
-            self.fname = None
-            if not (self.iname.endswith('.jpg') or self.iname.endswith('.png')):
-                self.show_error_message("Ошибка формата файла", "Выбранный файл должен быть формата jpg либо png.")
-                return
+            try:
+                destination_path = os.path.join(self.folder_path, os.path.basename(self.iname))
+                shutil.copy(self.iname, destination_path)
+
+                # self.iname = self.iname.split('/')[-1]
+                self.fname = None
+                if not (self.iname.endswith('.jpg') or self.iname.endswith('.png')):
+                    self.show_error_message("Ошибка формата файла", "Выбранный файл должен быть формата jpg либо png.")
+                    return
+            except Exception as e:
+                print(e)
             self.check()
 
         # возможность выбирать файл/изображение
 
     def watermarkb(self):
         self.wname = QFileDialog.getOpenFileName(self, 'Выбрать водяной знак', '')[0]
-        self.wname = self.wname.split('/')[-1]
-        if not (self.wname.endswith('.jpg') or self.wname.endswith('.png')):
-            self.show_error_message("Ошибка формата файла", "Выбранный файл должен быть формата jpg либо png.")
-            return
-        self.check()
-        self.water_mark_place()
+        try:
+            destination_path = os.path.join(self.folder_path, os.path.basename(self.wname))
+            shutil.copy(self.wname, destination_path)
+            # self.wname = self.wname.split('/')[-1]
+
+            if not (self.wname.endswith('.jpg') or self.wname.endswith('.png')):
+                self.show_error_message("Ошибка формата файла", "Выбранный файл должен быть формата jpg либо png.")
+                return
+            self.check()
+            self.water_mark_place()
+        except Exception as e:
+            print(e)
+
+    def wrong_size(self, title, message):
+        size_error = QMessageBox(self)
+        size_error.setIcon(QMessageBox.Critical)
+        size_error.setWindowTitle(title)
+        size_error.setText(message)
+        size_error.exec_()
+
+    def set_watermark(self):
+
+        if self.wname and self.iname:
+            os.chmod(self.wname, 0o644)
+            os.chmod(self.iname, 0o644)
+
+            if os.access(self.wname, os.R_OK):
+                print("У вас есть права на чтение файла.")
+            else:
+                print("У вас нет прав на чтение файла.")
+
+            main_image = Image.open(self.iname)
+            insert_image = Image.open(self.wname)
+            width, height = main_image.size
+            width_i, height_i = insert_image.size
+
+            if ((width_i >= width) or (height_i >= height)):
+                self.wrong_size("Ошибка", 'Размер водяного знака должен быть меньше изображения.')
+            else:
+
+                result_path = 'D:\project\imagefolder\output_image.jpg'
+                if self.corner == 'lt':
+
+                    main_image.paste(insert_image, (0, 0))
+
+                    if os.path.exists(result_path):
+
+                        # Генерируйте уникальное имя для нового файла
+                        base_name, ext = os.path.splitext(result_path)
+
+                        self.i += 1
+                        result_path = f"{base_name}_{self.i}{ext}"
+                        main_image.save(result_path)
+                        self.pix = QPixmap(result_path)
+                        self.itog_label.setPixmap(self.pix)
+                    else:
+                        main_image.save(result_path)
+                        self.pix = QPixmap(result_path)
+                        self.itog_label.setPixmap(self.pix)
+
+
+                elif self.corner == 'mt':
+                    main_image.paste(insert_image, ((width // 2) - width_i, 0))
+
+                    if os.path.exists(result_path):
+
+                        # Генерируйте уникальное имя для нового файла
+                        base_name, ext = os.path.splitext(result_path)
+                        self.i += 1
+                        result_path = f"{base_name}_{self.i}{ext}"
+                        main_image.save(result_path)
+                        self.pix = QPixmap(result_path)
+                        self.itog_label.setPixmap(self.pix)
+                    else:
+                        main_image.save(result_path)
+                        self.pix = QPixmap(result_path)
+                        self.itog_label.setPixmap(self.pix)
+                elif self.corner == 'rt':
+                    main_image.paste(insert_image, (width - width_i, 0))
+                    if os.path.exists(result_path):
+
+                        # Генерируйте уникальное имя для нового файла
+                        base_name, ext = os.path.splitext(result_path)
+                        self.i += 1
+                        result_path = f"{base_name}_{self.i}{ext}"
+                        main_image.save(result_path)
+                        self.pix = QPixmap(result_path)
+                        self.itog_label.setPixmap(self.pix)
+                    else:
+                        main_image.save(result_path)
+                        self.pix = QPixmap(result_path)
+                        self.itog_label.setPixmap(self.pix)
+
+                elif self.corner == 'lm':
+                    main_image.paste(insert_image, (0, (height // 2)))
+
+                    if os.path.exists(result_path):
+
+                        # Генерируйте уникальное имя для нового файла
+                        base_name, ext = os.path.splitext(result_path)
+                        self.i += 1
+                        result_path = f"{base_name}_{self.i}{ext}"
+                        main_image.save(result_path)
+                        self.pix = QPixmap(result_path)
+                        self.itog_label.setPixmap(self.pix)
+                    else:
+                        main_image.save(result_path)
+                        self.pix = QPixmap(result_path)
+                        self.itog_label.setPixmap(self.pix)
+                elif self.corner == 'mm':
+                    main_image.paste(insert_image, ((width // 2) - width_i, (height // 2)))
+
+                    if os.path.exists(result_path):
+
+                        # Генерируйте уникальное имя для нового файла
+                        base_name, ext = os.path.splitext(result_path)
+                        self.i += 1
+                        result_path = f"{base_name}_{self.i}{ext}"
+                        main_image.save(result_path)
+                        self.pix = QPixmap(result_path)
+                        self.itog_label.setPixmap(self.pix)
+                    else:
+                        main_image.save(result_path)
+                        self.pix = QPixmap(result_path)
+                        self.itog_label.setPixmap(self.pix)
+                elif self.corner == 'rm':
+                    main_image.paste(insert_image, (width - width_i, (height // 2)))
+
+                    if os.path.exists(result_path):
+
+                        # Генерируйте уникальное имя для нового файла
+                        base_name, ext = os.path.splitext(result_path)
+                        self.i += 1
+                        result_path = f"{base_name}_{self.i}{ext}"
+                        main_image.save(result_path)
+                        self.pix = QPixmap(result_path)
+                        self.itog_label.setPixmap(self.pix)
+                    else:
+                        main_image.save(result_path)
+                        self.pix = QPixmap(result_path)
+                        self.itog_label.setPixmap(self.pix)
+                elif self.corner == 'ld':
+                    main_image.paste(insert_image, (0, height - height_i))
+
+                    if os.path.exists(result_path):
+
+                        # Генерируйте уникальное имя для нового файла
+                        base_name, ext = os.path.splitext(result_path)
+                        self.i += 1
+                        result_path = f"{base_name}_{self.i}{ext}"
+                        main_image.save(result_path)
+                        self.pix = QPixmap(result_path)
+                        self.itog_label.setPixmap(self.pix)
+                    else:
+                        main_image.save(result_path)
+                        self.pix = QPixmap(result_path)
+                        self.itog_label.setPixmap(self.pix)
+                elif self.corner == 'ld':
+                    main_image.paste(insert_image, (0, height - height_i))
+
+                    if os.path.exists(result_path):
+
+                        # Генерируйте уникальное имя для нового файла
+                        base_name, ext = os.path.splitext(result_path)
+                        self.i += 1
+                        result_path = f"{base_name}_{self.i}{ext}"
+                        main_image.save(result_path)
+                        self.pix = QPixmap(result_path)
+                        self.itog_label.setPixmap(self.pix)
+                    else:
+                        main_image.save(result_path)
+                        self.pix = QPixmap(result_path)
+                        self.itog_label.setPixmap(self.pix)
+                elif self.corner == 'md':
+                    main_image.paste(insert_image, ((width // 2) - width_i, height - height_i))
+
+                    if os.path.exists(result_path):
+
+                        # Генерируйте уникальное имя для нового файла
+                        base_name, ext = os.path.splitext(result_path)
+                        self.i += 1
+                        result_path = f"{base_name}_{self.i}{ext}"
+                        main_image.save(result_path)
+                        self.pix = QPixmap(result_path)
+                        self.itog_label.setPixmap(self.pix)
+                    else:
+                        main_image.save(result_path)
+                        self.pix = QPixmap(result_path)
+                        self.itog_label.setPixmap(self.pix)
+                elif self.corner == 'rd':
+                    main_image.paste(insert_image, (width - width_i, height - height_i))
+
+                    if os.path.exists(result_path):
+
+                        # Генерируйте уникальное имя для нового файла
+                        base_name, ext = os.path.splitext(result_path)
+                        self.i += 1
+                        result_path = f"{base_name}_{self.i}{ext}"
+                        main_image.save(result_path)
+                        self.pix = QPixmap(result_path)
+                        self.itog_label.setPixmap(self.pix)
+                    else:
+                        main_image.save(result_path)
+                        self.pix = QPixmap(result_path)
+                        self.itog_label.setPixmap(self.pix)
 
     def water_mark_place(self):
         if self.wname:
-            self.app1 = Wplace()
+            self.app1 = Wplace(self)
             self.app1.show()
 
     def menu_calculation(self):
@@ -369,7 +587,10 @@ class WaterMarker(QMainWindow):
                     'total_en': total[1],
                     'total_b': total[2],
                     'total_j': total[3],
-                    'total_u': total[4]
+                    'total_u': total[4],
+                    'school_n': "Иванов Иван николаевич",
+                    'direct_n': 'Петров Александр Юрьевич',
+                    'cook_n': 'Васильева Анна Григорьевна'
                 }
 
                 doc.render(context)
